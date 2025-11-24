@@ -19,26 +19,27 @@ class YaoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => onHover(), // 鼠标进入时触发
-      onExit: (_) => onExit(),   // 鼠标离开时触发
+      onEnter: (_) => onHover(),
+      onExit: (_) => onExit(),
       child: Container(
-        width: 40, // 爻宽度
-        height: 20, // 爻高度
-        margin: const EdgeInsets.symmetric(vertical: 2),
+        width: 25, // 进一步缩小宽度，让爻更纤细
+        height: 12, // 缩小高度
+        margin: const EdgeInsets.symmetric(vertical: 0.5), // 极小的垂直间距
         decoration: BoxDecoration(
-          color: isHovered ? Colors.yellow[200] : Colors.transparent,
-          border: Border.all(
-            color: isYang ? Colors.black87 : Colors.grey,
-            width: 2,
-          ),
-          // 阳爻中间加横线，阴爻中间加空格（样式可自定义）
+          // 可选：去掉背景/边框，让爻更简洁，只保留文字
+          // color: isHovered ? Colors.grey[200] : Colors.transparent,
+          // border: Border.all(color: Colors.black12, width: 0.5),
+          borderRadius: BorderRadius.circular(2), // 小圆角，更柔和
         ),
         child: Center(
           child: Text(
-            isYang ? "—" : "--", // 阳爻/阴爻符号
+            // 优化阴爻的显示：用两个短横+空格分隔，更纤细
+            isYang ? "—" : "- -",
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: isYang ? FontWeight.bold : FontWeight.normal,
+              fontSize: 10, // 缩小字号，减少粗度
+              fontWeight: FontWeight.w300, // 字重设为细体（w100-w500可选）
+              color: Colors.black87, // 稍微降低黑色浓度，更柔和
+              letterSpacing: isYang ? 0 : 1, // 阴爻的两个短横间距调大一点
             ),
           ),
         ),

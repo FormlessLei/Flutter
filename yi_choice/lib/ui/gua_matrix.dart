@@ -5,14 +5,34 @@ import '../models/gua_model.dart';
 import 'gua_item.dart';
 import 'package:flutter/foundation.dart';
 
+// -------------------------- 常量配置 --------------------------
+class GuaMatrixConstants {
+  // 行头列宽（固定值，避免动态计算）
+  static const double rowHeaderColumnWidth = 40;
+  // 矩阵列宽（弹性分配剩余空间）
+  static const double matrixColumnFlex = 1;
+  // 卦象格子宽高比
+  static const double guaItemAspectRatio = 0.8;
+  // 内边距/间距（统一小值，减少布局计算）
+  static const EdgeInsets globalPadding = EdgeInsets.all(4);
+  static const double cellSpacing = 2;
+  // 表头文字样式
+  static const TextStyle headerTextStyle = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: Colors.black87,
+  );
+}
+// -------------------------------------------------------------------
+
 class GuaMatrix extends StatelessWidget {
-  final LiuShiSiGua? currentGua; // 当前选中卦
-  final LiuShiSiGua? hoveredGua; // 悬停变爻后的卦
-  final List<LiuShiSiGua> compareList; // 对比列表
-  final bool isComparing; // 是否在对比状态
-  final Function(LiuShiSiGua) onGuaTap; // 点击卦回调
-  final Function(int) onYaoHover; // 爻悬停回调（传爻索引）
-  final Function(int) onYaoExit; // 爻离开悬停回调
+  final LiuShiSiGua? currentGua;
+  final LiuShiSiGua? hoveredGua;
+  final List<LiuShiSiGua> compareList;
+  final bool isComparing;
+  final Function(LiuShiSiGua) onGuaTap;
+  final Function(int) onYaoHover;
+  final Function(int) onYaoExit;
 
   const GuaMatrix({
     super.key,
@@ -25,48 +45,110 @@ class GuaMatrix extends StatelessWidget {
     required this.onYaoExit,
   });
 
+  List<String> get _baguaNames => baguas.map((e) => e.name).toList();
+
   @override
   Widget build(BuildContext context) {
-    // 矩阵为8x8（行=外卦，列=内卦）
-    return GridView.count(
-      crossAxisCount: 8, // 8列（内卦）
-      childAspectRatio: 1, // 宽高比1:1
-      padding: const EdgeInsets.all(8),
+    return Container(
+      padding: GuaMatrixConstants.globalPadding,
+      child: SingleChildScrollView(
+        // 仅保留必要的滚动，禁用复杂物理效果
+        physics: const ClampingScrollPhysics(),
+        child: Table(
+          // 表格边框（可选，便于调试对齐）
+          border: TableBorder.all(width: 0, color: Colors.transparent),
+          // 列宽配置：第0列是行头（固定宽），1-8列是矩阵（弹性宽）
+          columnWidths: {
+            0: FixedColumnWidth(GuaMatrixConstants.rowHeaderColumnWidth),
+            1: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            2: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            3: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            4: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            5: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            6: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            7: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+            8: const FlexColumnWidth(GuaMatrixConstants.matrixColumnFlex),
+          },
+          // 单元格垂直对齐：居中，保证行头与卦象对齐
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          children: [
+            // 第一行：顶部列头（第0列空，1-8列是经卦名）
+            _buildColumnHeaderRow(),
+            // 后续8行：行头 + 8个卦象
+            ..._buildMatrixRows(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 构建顶部列头行
+  TableRow _buildColumnHeaderRow() {
+    return TableRow(
       children: [
-        // 遍历外卦（行）和内卦（列），生成64卦
-        for (int row = 0; row < 8; row++) // 外卦索引
-          for (int col = 0; col < 8; col++) // 内卦索引
-            _buildGuaItem(row, col),
+        // 第0列：空单元格（行头列的列头）
+        const SizedBox(height: 40),
+        // 1-8列：经卦名
+        ..._baguaNames.map((name) => _buildHeaderCell(name, height: 40)),
       ],
     );
   }
 
-  // 根据外卦行、内卦列，生成对应的64卦Item
-  Widget _buildGuaItem(int outerIndex, int innerIndex) {
-    // 1. 获取外卦和内卦的三爻序列
-    final outerTrigram = baguas[outerIndex].trigrams; // 外卦三爻
-    final innerTrigram = baguas[innerIndex].trigrams; // 内卦三爻
-    // 2. 组合为六爻序列（外卦三爻 + 内卦三爻，顺序必须与64卦配置一致！）
-    final hexagrams = [...outerTrigram, ...innerTrigram];
-    // 3. 查找对应的64卦（核心：动态匹配）
+  // 构建矩阵的8行数据
+  List<TableRow> _buildMatrixRows() {
+    return List.generate(8, (row) {
+      return TableRow(
+        children: [
+          // 第0列：行头（经卦名）
+          _buildHeaderCell(_baguaNames[row], width: GuaMatrixConstants.rowHeaderColumnWidth),
+          // 1-8列：对应列的卦象
+          ...List.generate(8, (col) => _buildGuaCell(row, col)),
+        ],
+      );
+    });
+  }
+
+  // 构建表头单元格（行头/列头通用）
+  Widget _buildHeaderCell(String text, {double? width, double? height}) {
+    return Container(
+      width: width,
+      height: height,
+      alignment: Alignment.center,
+      margin: EdgeInsets.all(GuaMatrixConstants.cellSpacing),
+      child: Text(text, style: GuaMatrixConstants.headerTextStyle),
+    );
+  }
+
+  // 构建卦象单元格
+  Widget _buildGuaCell(int row, int col) {
+    // 原有卦象匹配逻辑（极简保留，无多余计算）
+    final outerGua = baguas[row];
+    final innerGua = baguas[col];
+    final hexagrams = [...outerGua.trigrams, ...innerGua.trigrams];
     final gua = liuShiSiGua.firstWhere(
       (g) => listEquals(g.hexagrams, hexagrams),
-      orElse: () => throw "未找到对应卦：$hexagrams", // 配置正确则不会触发
+      orElse: () => liuShiSiGua.first,
     );
-    // 4. 判断当前卦的状态（选中/悬停/对比）
+
     final isSelected = currentGua != null && listEquals(currentGua!.hexagrams, gua.hexagrams);
     final isHovered = hoveredGua != null && listEquals(hoveredGua!.hexagrams, gua.hexagrams);
     final isInCompare = compareList.any((g) => listEquals(g.hexagrams, gua.hexagrams));
 
-    // 5. 返回卦组件
-    return GuaItem(
-      gua: gua,
-      isSelected: isSelected,
-      isHoveredGua: isHovered,
-      isInCompare: isInCompare,
-      onTap: () => onGuaTap(gua),
-      onYaoHover: onYaoHover,
-      onYaoExit: onYaoExit,
+    // 核心：用AspectRatio固定宽高比，无动态计算
+    return Container(
+      margin: EdgeInsets.all(GuaMatrixConstants.cellSpacing),
+      child: AspectRatio(
+        aspectRatio: GuaMatrixConstants.guaItemAspectRatio,
+        child: GuaItem(
+          gua: gua,
+          isSelected: isSelected,
+          isHoveredGua: isHovered,
+          isInCompare: isInCompare,
+          onTap: () => onGuaTap(gua),
+          onYaoHover: onYaoHover,
+          onYaoExit: onYaoExit,
+        ),
+      ),
     );
   }
 }

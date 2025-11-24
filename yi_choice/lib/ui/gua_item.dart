@@ -37,20 +37,27 @@ class GuaItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 卦名（简洁显示）
+            // 1. 缩小卦名字体+自动换行+居中
             Text(
-              gua.fullName,
-              style: const TextStyle(fontSize: 12),
+              gua.name,
+              style: const TextStyle(fontSize: 8), // 原12/10，进一步缩小
+              softWrap: true,
+              textAlign: TextAlign.center,
+              maxLines: 2, // 限制最多2行，避免过长
+              overflow: TextOverflow.ellipsis, // 超出显示省略号
             ),
-            // 六爻（从初爻到上爻，按索引0-5排列）
+            // 2. 缩小爻组件的垂直间距（可选）
             ...List.generate(6, (i) {
-              final isYang = gua.hexagrams[i] == 1; // 注意：此处依赖六爻顺序！
-              return YaoItem(
-                isYang: isYang,
-                index: i,
-                isHovered: false, // 暂不处理爻自身悬停样式，由父组件控制
-                onHover: () => onYaoHover(i),
-                onExit: () => onYaoExit(i),
+              final isYang = gua.hexagrams[i] == 1;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 1), // 原2，减小爻的垂直间距
+                child: YaoItem(
+                  isYang: isYang,
+                  index: i,
+                  isHovered: false,
+                  onHover: () => onYaoHover(i),
+                  onExit: () => onYaoExit(i),
+                ),
               );
             }),
           ],
