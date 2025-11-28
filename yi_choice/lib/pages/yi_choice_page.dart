@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // 用于listEquals
+import 'package:flutter/foundation.dart';
 import '../data/liushisi_gua.dart';
 import '../models/gua_model.dart';
 import '../ui/gua_matrix.dart';
@@ -13,133 +13,74 @@ class YiChoicePage extends StatefulWidget {
 }
 
 class _YiChoicePageState extends State<YiChoicePage> {
-  LiuShiSiGua? currentGua; // 当前选中卦
-  LiuShiSiGua? hoveredGua; // 悬停变爻后的卦
-  List<LiuShiSiGua> compareList = []; // 对比列表
-  bool isComparing = false; // 是否在对比状态
-  final int maxCompareCount = 6; // 最大对比数
+  LiuShiSiGua? _currentGua; // 选中的卦
+  LiuShiSiGua? _hoveredGuaGrid; // 矩阵中悬停的卦
+  int? _hoveredYaoIndex; // 选中卦悬停的爻位
+  List<LiuShiSiGua> _currentGuaVariants = []; // 选中卦的6个变卦
+  List<LiuShiSiGua> _compareList = []; // 对比列表
 
-  // 点击卦：切换当前卦或添加到对比列表
-  void _onGuaTap(LiuShiSiGua gua) {
-    setState(() {
-      if (isComparing) {
-        // 对比状态：添加/移除对比卦（最多6个）
-        if (compareList.any((g) => listEquals(g.hexagrams, gua.hexagrams))) {
-          compareList.removeWhere((g) => listEquals(g.hexagrams, gua.hexagrams));
-        } else if (compareList.length < maxCompareCount) {
-          compareList.add(gua);
-        }
-      } else {
-        // 正常状态：切换当前卦
-        currentGua = gua;
-        hoveredGua = null; // 切换后清空悬停卦
-      }
+  @override
+  void initState() {
+    super.initState();
+    // 初始化：选中乾为天，并计算其6个变卦
+    _currentGua = liushisiGuaList.first;
+    _calculateVariants(_currentGua!);
+  }
+
+  // 计算选中卦的6个变卦（核心：反转每个爻位生成变卦）
+  void _calculateVariants(LiuShiSiGua gua) {
+    _currentGuaVariants = List.generate(6, (index) {
+      final newYaoList = List.from(gua.yaoList);
+      newYaoList[index] = newYaoList[index] == 1 ? 0 : 1; // 反转爻的阴阳
+      return liushisiGuaList.firstWhere(
+        (g) => listEquals(g.yaoList, newYaoList),
+        orElse: () => gua,
+      );
     });
-  }
-
-  // 悬停爻：计算变爻后的卦
-  void _onYaoHover(int yaoIndex) {
-    if (currentGua == null) return;
-    // 复制当前卦六爻，翻转指定爻
-    final newHexagrams = List.from(currentGua!.hexagrams);
-    newHexagrams[yaoIndex] = 1 - newHexagrams[yaoIndex];
-    // 查找变爻后的卦
-    final newGua = liuShiSiGua.firstWhere(
-      (g) => listEquals(g.hexagrams, newHexagrams),
-      orElse: () => currentGua!,
-    );
-    setState(() => hoveredGua = newGua);
-  }
-
-  // 离开爻悬停：清空悬停卦
-  void _onYaoExit(int yaoIndex) {
-    setState(() => hoveredGua = null);
-  }
-
-  // 切换对比状态
-  void _toggleCompareMode() {
-    setState(() {
-      isComparing = !isComparing;
-      if (!isComparing) compareList.clear(); // 退出时清空对比列表
-    });
-  }
-
-  // 展示对比弹窗
-  void _showCompareDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("对比结果"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: compareList.map((gua) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(gua.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("卦辞：${gua.guaCi}"),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("关闭"),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("易经决策器"),
-        actions: [
-          // 对比按钮：切换状态或确认对比
-          TextButton(
-            onPressed: isComparing ? _showCompareDialog : _toggleCompareMode,
-            child: Text(
-              isComparing ? "确认对比(${compareList.length}/$maxCompareCount)" : "对比",
-              style: TextStyle(color: isComparing ? Colors.red : Colors.white),
-            ),
-          ),
-          if (isComparing)
-            TextButton(
-              onPressed: _toggleCompareMode,
-              child: const Text("取消", style: TextStyle(color: Colors.white)),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('易经64卦矩阵')),
       body: Row(
         children: [
-          // 左侧：64卦矩阵（占2/3宽度）
           Expanded(
-            flex: 2,
+            flex: 3,
             child: GuaMatrix(
-              currentGua: currentGua,
-              hoveredGua: hoveredGua,
-              compareList: compareList,
-              isComparing: isComparing,
-              onGuaTap: _onGuaTap,
-              onYaoHover: _onYaoHover,
-              onYaoExit: _onYaoExit,
+              currentGua: _currentGua,
+              hoveredGuaGrid: _hoveredGuaGrid,
+              hoveredYaoIndexOfCurrent: _hoveredYaoIndex,
+              currentGuaVariants: _currentGuaVariants,
+              compareList: _compareList,
+              isComparing: _compareList.isNotEmpty,
+              onGuaTap: (gua) {
+                setState(() {
+                  _currentGua = gua;
+                  _calculateVariants(gua); // 重新计算变卦
+                });
+              },
+              onGuaGridHover: (gua) {
+                setState(() => _hoveredGuaGrid = gua);
+              },
+              onGuaGridExit: () {
+                setState(() => _hoveredGuaGrid = null);
+              },
+              onCurrentGuaYaoHover: (index) {
+                setState(() => _hoveredYaoIndex = index);
+              },
+              onCurrentGuaYaoExit: () {
+                setState(() => _hoveredYaoIndex = null);
+              },
             ),
           ),
-          // 右侧：详情面板（占1/3宽度）
           Expanded(
             flex: 1,
             child: Container(
               decoration: const BoxDecoration(
                 border: Border(left: BorderSide(color: Colors.grey)),
               ),
-              child: GuaDetail(gua: currentGua),
+              child: GuaDetail(gua: _currentGua),
             ),
           ),
         ],
