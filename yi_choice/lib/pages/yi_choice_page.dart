@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../data/liushisi_gua.dart';
-import '../models/gua_model.dart';
 import '../ui/gua_matrix.dart';
 import '../ui/gua_detail.dart';
 

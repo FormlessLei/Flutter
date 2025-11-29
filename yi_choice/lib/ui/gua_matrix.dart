@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/bagua.dart'; // 经卦数据
 import '../data/liushisi_gua.dart'; // 64卦数据
-import '../models/gua_model.dart'; // 卦模型
 import 'gua_item.dart'; // 卦项组件
 
 class GuaMatrixConstants {
@@ -166,6 +164,7 @@ class GuaMatrix extends StatelessWidget {
         aspectRatio: GuaMatrixConstants.guaItemAspectRatio,
         child: GuaItem(
           gua: gua,
+          // currentGua: currentGua,
           isSelected: isSelected,
           isGuaGridHovered: isGuaGridHovered,
           isVariantHighlight: isVariantHighlight,

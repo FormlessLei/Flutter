@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/gua_model.dart';
+import '../data/liushisi_gua.dart'; // 64卦数据
+
 
 class GuaDetail extends StatelessWidget {
   final LiuShiSiGua? gua; // 当前选中的卦（可为null）
@@ -34,12 +35,10 @@ class GuaDetail extends StatelessWidget {
           Text("爻辞：", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
           const SizedBox(height: 8),
           ...List.generate(6, (i) {
-            // 爻位名称（初爻、二爻...上爻）
-            final yaoName = ["初九", "九二", "九三", "九四", "九五", "上九"][i];
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                "$yaoName：${gua!.yaoCi[i]}",
+                gua!.yaoCi[i],
                 style: const TextStyle(fontSize: 16),
               ),
             );

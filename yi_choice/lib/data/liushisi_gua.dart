@@ -1,5 +1,3 @@
-import '../models/gua_model.dart';
-
 
 // --------------- 新增：工具方法（核心）---------------
 /// 1. 根据选中卦和变爻位，生成变卦的六爻数组
@@ -38,15 +36,66 @@ List<int> calculateBianYaoIndexes(LiuShiSiGua gua1, LiuShiSiGua gua2) {
   return indexes;
 }
 
+/// 8经卦模型（三爻）
+class Bagua {
+  final String name; // 卦名（如"乾"）
+  final String symbol; // 符号（如"☰"）
+  final List<int> trigrams; // 三爻阴阳序列（1=阳，0=阴，顺序：上爻→下爻）
 
-/// 64卦配置（先补充乾宫八卦，按八宫卦序：本宫卦、一世卦、二世卦、三世卦、四世卦、五世卦、游魂卦、归魂卦）
-/// 六爻序列规则：[外卦上爻, 外卦中爻, 外卦下爻, 内卦上爻, 内卦中爻, 内卦下爻]，1=阳爻，0=阴爻
+  // const构造函数，支持编译时常量
+  const Bagua({
+    required this.name,
+    required this.symbol,
+    required this.trigrams,
+  });
+}
+
+const Bagua qian = Bagua(name: "乾", symbol: "☰", trigrams: [1, 1, 1]);
+const Bagua dui = Bagua(name: "兑", symbol: "☱", trigrams: [0, 1, 1]);
+const Bagua li = Bagua(name: "离", symbol: "☲", trigrams: [1, 0, 1]);
+const Bagua zhen = Bagua(name: "震", symbol: "☳", trigrams: [0, 0, 1]);
+const Bagua xun = Bagua(name: "巽", symbol: "☴", trigrams: [1, 1, 0]);
+const Bagua kan = Bagua(name: "坎", symbol: "☵", trigrams: [0, 1, 0]);
+const Bagua gen = Bagua(name: "艮", symbol: "☶", trigrams: [1, 0, 0]);
+const Bagua kun = Bagua(name: "坤", symbol: "☷", trigrams: [0, 0, 0]);
+
+const List<Bagua> baguas = [qian, dui, li, zhen, xun, kan, gen, kun];
+
+/// 64卦模型（六爻）- 不可变类
+class LiuShiSiGua {
+  final String name; // 卦名（如"乾为天"）
+  final String shortName; // 简称（如"乾"）
+  final Bagua upper; // 上卦（外卦）
+  final Bagua lower; // 下卦（内卦）
+  final String guaCi; // 卦辞
+  final List<String> yaoCi; // 六爻爻辞（索引0=初爻，5=上爻）
+
+  // const构造函数，支持编译时常量
+  const LiuShiSiGua({
+    required this.name,
+    required this.shortName,
+    required this.upper,
+    required this.lower,
+    required this.guaCi,
+    required this.yaoCi,
+  });
+
+  // 扩展六爻列表（上卦三爻 + 下卦三爻，匹配原逻辑）
+  List<int> get yaoList {
+    return [...upper.trigrams, ...lower.trigrams];
+  }
+}
+
+
+
+/// 64卦配置（按八宫卦序：本宫卦、一世卦、二世卦、三世卦、四世卦、五世卦、游魂卦、归魂卦）
 const List<LiuShiSiGua> liushisiGuaList = [
-  // 乾宫第一卦：乾为天（本宫卦，外乾+内乾）
-  (
+  // 乾宫八卦
+  LiuShiSiGua(
     name: "乾为天",
     shortName: "乾",
-    yaoList: [1, 1, 1, 1, 1, 1], // 外乾[1,1,1] + 内乾[1,1,1]
+    upper: qian,
+    lower: qian,
     guaCi: "元亨利贞。",
     yaoCi: [
       "初九：潜龙勿用。",
@@ -57,11 +106,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：亢龙有悔。",
     ],
   ),
-  // 乾宫第二卦：天风姤（一世卦，外乾+内巽）
-  (
+  LiuShiSiGua(
     name: "天风姤",
     shortName: "姤",
-    yaoList: [1, 1, 1, 0, 1, 1], // 外乾[1,1,1] + 内巽[0,1,1]
+    upper: qian,
+    lower: xun,
     guaCi: "女壮，勿用取女。",
     yaoCi: [
       "初六：系于金柅，贞吉，有攸往，见凶，羸豕孚蹢躅。",
@@ -72,11 +121,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：姤其角，吝，无咎。",
     ],
   ),
-  // 乾宫第三卦：天山遁（二世卦，外乾+内艮）
-  (
+  LiuShiSiGua(
     name: "天山遁",
     shortName: "遁",
-    yaoList: [1, 1, 1, 1, 0, 0], // 外乾[1,1,1] + 内艮[1,0,0]
+    upper: qian,
+    lower: gen,
     guaCi: "亨，小利贞。",
     yaoCi: [
       "初六：遁尾，厉，勿用有攸往。",
@@ -87,11 +136,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：肥遁，无不利。",
     ],
   ),
-  // 乾宫第四卦：天地否（三世卦，外乾+内坤）
-  (
+  LiuShiSiGua(
     name: "天地否",
     shortName: "否",
-    yaoList: [1, 1, 1, 0, 0, 0], // 外乾[1,1,1] + 内坤[0,0,0]
+    upper: qian,
+    lower: kun,
     guaCi: "否之匪人，不利君子贞，大往小来。",
     yaoCi: [
       "初六：拔茅茹，以其汇，贞吉，亨。",
@@ -102,11 +151,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：倾否，先否后喜。",
     ],
   ),
-  // 乾宫第五卦：风地观（四世卦，外巽+内坤）
-  (
+  LiuShiSiGua(
     name: "风地观",
     shortName: "观",
-    yaoList: [0, 1, 1, 0, 0, 0], // 外巽[0,1,1] + 内坤[0,0,0]
+    upper: xun,
+    lower: kun,
     guaCi: "盥而不荐，有孚颙若。",
     yaoCi: [
       "初六：童观，小人无咎，君子吝。",
@@ -117,11 +166,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：观其生，君子无咎。",
     ],
   ),
-  // 乾宫第六卦：山地剥（五世卦，外艮+内坤）
-  (
+  LiuShiSiGua(
     name: "山地剥",
     shortName: "剥",
-    yaoList: [1, 0, 0, 0, 0, 0], // 外艮[1,0,0] + 内坤[0,0,0]
+    upper: gen,
+    lower: kun,
     guaCi: "不利有攸往。",
     yaoCi: [
       "初六：剥床以足，蔑贞，凶。",
@@ -132,11 +181,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：硕果不食，君子得舆，小人剥庐。",
     ],
   ),
-  // 乾宫第七卦：火地晋（游魂卦，外离+内坤）
-  (
+  LiuShiSiGua(
     name: "火地晋",
     shortName: "晋",
-    yaoList: [1, 0, 1, 0, 0, 0], // 外离[1,0,1] + 内坤[0,0,0]
+    upper: li,
+    lower: kun,
     guaCi: "康侯用锡马蕃庶，昼日三接。",
     yaoCi: [
       "初六：晋如，摧如，贞吉。罔孚，裕无咎。",
@@ -147,11 +196,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：晋其角，维用伐邑，厉吉，无咎，贞吝。",
     ],
   ),
-  // 乾宫第八卦：火天大有（归魂卦，外离+内乾）
-  (
+  LiuShiSiGua(
     name: "火天大有",
     shortName: "大有",
-    yaoList: [1, 0, 1, 1, 1, 1], // 外离[1,0,1] + 内乾[1,1,1]
+    upper: li,
+    lower: qian,
     guaCi: "元亨。",
     yaoCi: [
       "初九：无交害，匪咎，艰则无咎。",
@@ -162,11 +211,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：自天祐之，吉无不利。",
     ],
   ),
-  // 坤宫第一卦：坤为地（本宫卦，外坤+内坤）
-  (
+
+  // 坤宫八卦
+  LiuShiSiGua(
     name: "坤为地",
     shortName: "坤",
-    yaoList: [0, 0, 0, 0, 0, 0], // 外坤[0,0,0] + 内坤[0,0,0]
+    upper: kun,
+    lower: kun,
     guaCi: "元亨，利牝马之贞。君子有攸往，先迷后得，主利。西南得朋，东北丧朋。安贞吉。",
     yaoCi: [
       "初六：履霜，坚冰至。",
@@ -177,11 +228,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：龙战于野，其血玄黄。",
     ],
   ),
-  // 坤宫第二卦：地雷复（一世卦，外坤+内震）
-  (
+  LiuShiSiGua(
     name: "地雷复",
     shortName: "复",
-    yaoList: [0, 0, 0, 0, 0, 1], // 外坤[0,0,0] + 内震[0,0,1]
+    upper: kun,
+    lower: zhen,
     guaCi: "亨。出入无疾，朋来无咎。反复其道，七日来复，利有攸往。",
     yaoCi: [
       "初九：不远复，无祗悔，元吉。",
@@ -192,11 +243,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：迷复，凶，有灾眚。用行师，终有大败，以其国君，凶；至于十年，不克征。",
     ],
   ),
-  // 坤宫第三卦：地泽临（二世卦，外坤+内兑）
-  (
+  LiuShiSiGua(
     name: "地泽临",
     shortName: "临",
-    yaoList: [0, 0, 0, 1, 1, 0], // 外坤[0,0,0] + 内兑[1,1,0]
+    upper: kun,
+    lower: dui,
     guaCi: "元亨，利贞。至于八月有凶。",
     yaoCi: [
       "初九：咸临，贞吉。",
@@ -207,11 +258,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：敦临，吉，无咎。",
     ],
   ),
-  // 坤宫第四卦：地天泰（三世卦，外坤+内乾）
-  (
+  LiuShiSiGua(
     name: "地天泰",
     shortName: "泰",
-    yaoList: [0, 0, 0, 1, 1, 1], // 外坤[0,0,0] + 内乾[1,1,1]
+    upper: kun,
+    lower: qian,
     guaCi: "小往大来，吉，亨。",
     yaoCi: [
       "初九：拔茅茹，以其汇，征吉。",
@@ -222,11 +273,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：城复于隍，勿用师，自邑告命，贞吝。",
     ],
   ),
-  // 坤宫第五卦：雷天大壮（四世卦，外震+内乾）
-  (
+  LiuShiSiGua(
     name: "雷天大壮",
     shortName: "大壮",
-    yaoList: [0, 0, 1, 1, 1, 1], // 外震[0,0,1] + 内乾[1,1,1]
+    upper: zhen,
+    lower: qian,
     guaCi: "利贞。",
     yaoCi: [
       "初九：壮于趾，征凶，有孚。",
@@ -237,11 +288,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：羝羊触藩，不能退，不能遂，无攸利，艰则吉。",
     ],
   ),
-  // 坤宫第六卦：泽天夬（五世卦，外兑+内乾）
-  (
+  LiuShiSiGua(
     name: "泽天夬",
     shortName: "夬",
-    yaoList: [1, 1, 0, 1, 1, 1], // 外兑[1,1,0] + 内乾[1,1,1]
+    upper: dui,
+    lower: qian,
     guaCi: "扬于王庭，孚号，有厉。告自邑，不利即戎，利有攸往。",
     yaoCi: [
       "初九：壮于前趾，往不胜为咎。",
@@ -252,11 +303,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：无号，终有凶。",
     ],
   ),
-  // 坤宫第七卦：水天需（游魂卦，外坎+内乾）
-  (
+  LiuShiSiGua(
     name: "水天需",
     shortName: "需",
-    yaoList: [0, 1, 0, 1, 1, 1], // 外坎[0,1,0] + 内乾[1,1,1]
+    upper: kan,
+    lower: qian,
     guaCi: "有孚，光亨，贞吉。利涉大川。",
     yaoCi: [
       "初九：需于郊，利用恒，无咎。",
@@ -267,11 +318,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：入于穴，有不速之客三人来，敬之终吉。",
     ],
   ),
-  // 坤宫第八卦：水地比（归魂卦，外坎+内坤）
-  (
+  LiuShiSiGua(
     name: "水地比",
     shortName: "比",
-    yaoList: [0, 1, 0, 0, 0, 0], // 外坎[0,1,0] + 内坤[0,0,0]
+    upper: kan,
+    lower: kun,
     guaCi: "吉。原筮元永贞，无咎。不宁方来，后夫凶。",
     yaoCi: [
       "初六：有孚比之，无咎。有孚盈缶，终来有它，吉。",
@@ -282,11 +333,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：比之无首，凶。",
     ],
   ),
-  // 震宫第一卦：震为雷（本宫卦，外震+内震）
-  (
+
+  // 震宫八卦
+  LiuShiSiGua(
     name: "震为雷",
     shortName: "震",
-    yaoList: [0, 0, 1, 0, 0, 1], // 外震[0,0,1] + 内震[0,0,1]
+    upper: zhen,
+    lower: zhen,
     guaCi: "亨。震来虩虩，笑言哑哑。震惊百里，不丧匕鬯。",
     yaoCi: [
       "初九：震来虩虩，后笑言哑哑，吉。",
@@ -297,11 +350,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：震索索，视矍矍，征凶。震不于其躬，于其邻，无咎。婚媾有言。",
     ],
   ),
-  // 震宫第二卦：雷地豫（一世卦，外震+内坤）
-  (
+  LiuShiSiGua(
     name: "雷地豫",
     shortName: "豫",
-    yaoList: [0, 0, 1, 0, 0, 0], // 外震[0,0,1] + 内坤[0,0,0]
+    upper: zhen,
+    lower: kun,
     guaCi: "利建侯行师。",
     yaoCi: [
       "初六：鸣豫，凶。",
@@ -312,11 +365,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：冥豫，成有渝，无咎。",
     ],
   ),
-  // 震宫第三卦：雷水解（二世卦，外震+内坎）
-  (
+  LiuShiSiGua(
     name: "雷水解",
     shortName: "解",
-    yaoList: [0, 0, 1, 0, 1, 0], // 外震[0,0,1] + 内坎[0,1,0]
+    upper: zhen,
+    lower: kan,
     guaCi: "利西南，无所往，其来复吉。有攸往，夙吉。",
     yaoCi: [
       "初六：无咎。",
@@ -327,11 +380,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：公用射隼于高墉之上，获之，无不利。",
     ],
   ),
-  // 震宫第四卦：雷风恒（三世卦，外震+内巽）
-  (
+  LiuShiSiGua(
     name: "雷风恒",
     shortName: "恒",
-    yaoList: [0, 0, 1, 0, 1, 1], // 外震[0,0,1] + 内巽[0,1,1]
+    upper: zhen,
+    lower: xun,
     guaCi: "亨，无咎，利贞，利有攸往。",
     yaoCi: [
       "初六：浚恒，贞凶，无攸利。",
@@ -342,11 +395,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：振恒，凶。",
     ],
   ),
-  // 震宫第五卦：地风升（四世卦，外坤+内巽）
-  (
+  LiuShiSiGua(
     name: "地风升",
     shortName: "升",
-    yaoList: [0, 0, 0, 0, 1, 1], // 外坤[0,0,0] + 内巽[0,1,1]
+    upper: kun,
+    lower: xun,
     guaCi: "元亨，用见大人，勿恤，南征吉。",
     yaoCi: [
       "初六：允升，大吉。",
@@ -357,11 +410,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：冥升，利于不息之贞。",
     ],
   ),
-  // 震宫第六卦：水风井（五世卦，外坎+内巽）
-  (
+  LiuShiSiGua(
     name: "水风井",
     shortName: "井",
-    yaoList: [0, 1, 0, 0, 1, 1], // 外坎[0,1,0] + 内巽[0,1,1]
+    upper: kan,
+    lower: xun,
     guaCi: "改邑不改井，无丧无得，往来井井。汔至，亦未繘井，羸其瓶，凶。",
     yaoCi: [
       "初六：井泥不食，旧井无禽。",
@@ -372,11 +425,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：井收勿幕，有孚元吉。",
     ],
   ),
-  // 震宫第七卦：泽风大过（游魂卦，外兑+内巽）
-  (
+  LiuShiSiGua(
     name: "泽风大过",
     shortName: "大过",
-    yaoList: [1, 1, 0, 0, 1, 1], // 外兑[1,1,0] + 内巽[0,1,1]
+    upper: dui,
+    lower: xun,
     guaCi: "栋桡，利有攸往，亨。",
     yaoCi: [
       "初六：藉用白茅，无咎。",
@@ -387,11 +440,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：过涉灭顶，凶，无咎。",
     ],
   ),
-  // 震宫第八卦：泽雷随（归魂卦，外兑+内震）
-  (
+  LiuShiSiGua(
     name: "泽雷随",
     shortName: "随",
-    yaoList: [1, 1, 0, 0, 0, 1], // 外兑[1,1,0] + 内震[0,0,1]
+    upper: dui,
+    lower: zhen,
     guaCi: "元亨，利贞，无咎。",
     yaoCi: [
       "初九：官有渝，贞吉。出门交有功。",
@@ -402,11 +455,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：拘系之，乃从维之。王用亨于西山。",
     ],
   ),
-  // 巽宫第一卦：巽为风（本宫卦，外巽+内巽）
-  (
+
+  // 巽宫八卦
+  LiuShiSiGua(
     name: "巽为风",
     shortName: "巽",
-    yaoList: [0, 1, 1, 0, 1, 1], // 外巽[0,1,1] + 内巽[0,1,1]
+    upper: xun,
+    lower: xun,
     guaCi: "小亨，利有攸往，利见大人。",
     yaoCi: [
       "初六：进退，利武人之贞。",
@@ -417,11 +472,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：巽在床下，丧其资斧，贞凶。",
     ],
   ),
-  // 巽宫第二卦：风天小畜（一世卦，外巽+内乾）
-  (
+  LiuShiSiGua(
     name: "风天小畜",
     shortName: "小畜",
-    yaoList: [0, 1, 1, 1, 1, 1], // 外巽[0,1,1] + 内乾[1,1,1]
+    upper: xun,
+    lower: qian,
     guaCi: "亨。密云不雨，自我西郊。",
     yaoCi: [
       "初九：复自道，何其咎，吉。",
@@ -432,11 +487,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：既雨既处，尚德载，妇贞厉。月几望，君子征凶。",
     ],
   ),
-  // 巽宫第三卦：风火家人（二世卦，外巽+内离）
-  (
+  LiuShiSiGua(
     name: "风火家人",
     shortName: "家人",
-    yaoList: [0, 1, 1, 1, 0, 1], // 外巽[0,1,1] + 内离[1,0,1]
+    upper: xun,
+    lower: li,
     guaCi: "利女贞。",
     yaoCi: [
       "初九：闲有家，悔亡。",
@@ -447,11 +502,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：有孚威如，终吉。",
     ],
   ),
-  // 巽宫第四卦：风雷益（三世卦，外巽+内震）
-  (
+  LiuShiSiGua(
     name: "风雷益",
     shortName: "益",
-    yaoList: [0, 1, 1, 0, 0, 1], // 外巽[0,1,1] + 内震[0,0,1]
+    upper: xun,
+    lower: zhen,
     guaCi: "利有攸往，利涉大川。",
     yaoCi: [
       "初九：利用为大作，元吉，无咎。",
@@ -462,11 +517,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：莫益之，或击之，立心勿恒，凶。",
     ],
   ),
-  // 巽宫第五卦：天雷无妄（四世卦，外乾+内震）
-  (
+  LiuShiSiGua(
     name: "天雷无妄",
     shortName: "无妄",
-    yaoList: [1, 1, 1, 0, 0, 1], // 外乾[1,1,1] + 内震[0,0,1]
+    upper: qian,
+    lower: zhen,
     guaCi: "元亨，利贞。其匪正有眚，不利有攸往。",
     yaoCi: [
       "初九：无妄，往吉。",
@@ -477,11 +532,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：无妄，行有眚，无攸利。",
     ],
   ),
-  // 巽宫第六卦：火雷噬嗑（五世卦，外离+内震）
-  (
+  LiuShiSiGua(
     name: "火雷噬嗑",
     shortName: "噬嗑",
-    yaoList: [1, 0, 1, 0, 0, 1], // 外离[1,0,1] + 内震[0,0,1]
+    upper: li,
+    lower: zhen,
     guaCi: "亨。利用狱。",
     yaoCi: [
       "初九：屦校灭趾，无咎。",
@@ -492,11 +547,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：何校灭耳，凶。",
     ],
   ),
-  // 巽宫第七卦：山雷颐（游魂卦，外艮+内震）
-  (
+  LiuShiSiGua(
     name: "山雷颐",
     shortName: "颐",
-    yaoList: [1, 0, 0, 0, 0, 1], // 外艮[1,0,0] + 内震[0,0,1]
+    upper: gen,
+    lower: zhen,
     guaCi: "贞吉。观颐，自求口实。",
     yaoCi: [
       "初九：舍尔灵龟，观我朵颐，凶。",
@@ -507,11 +562,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：由颐，厉吉，利涉大川。",
     ],
   ),
-  // 巽宫第八卦：山风蛊（归魂卦，外艮+内巽）
-  (
+  LiuShiSiGua(
     name: "山风蛊",
     shortName: "蛊",
-    yaoList: [1, 0, 0, 0, 1, 1], // 外艮[1,0,0] + 内巽[0,1,1]
+    upper: gen,
+    lower: xun,
     guaCi: "元亨，利涉大川。先甲三日，后甲三日。",
     yaoCi: [
       "初六：干父之蛊，有子，考无咎，厉终吉。",
@@ -522,11 +577,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：不事王侯，高尚其事。",
     ],
   ),
-  // 坎宫第一卦：坎为水（本宫卦，外坎+内坎）
-  (
+
+  // 坎宫八卦
+  LiuShiSiGua(
     name: "坎为水",
     shortName: "坎",
-    yaoList: [0, 1, 0, 0, 1, 0], // 外坎[0,1,0] + 内坎[0,1,0]
+    upper: kan,
+    lower: kan,
     guaCi: "习坎，有孚，维心亨，行有尚。",
     yaoCi: [
       "初六：习坎，入于坎窞，凶。",
@@ -537,11 +594,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：系用徽纆，置于丛棘，三岁不得，凶。",
     ],
   ),
-  // 坎宫第二卦：地水师（一世卦，外坎+内坤）
-  (
+  LiuShiSiGua(
     name: "地水师",
     shortName: "师",
-    yaoList: [0, 0, 0, 0, 1, 0], // 外坤[0,0,0] + 内坎[0,1,0]
+    upper: kun,
+    lower: kan,
     guaCi: "贞，丈人吉，无咎。",
     yaoCi: [
       "初六：师出以律，否臧凶。",
@@ -552,11 +609,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：大君有命，开国承家，小人勿用。",
     ],
   ),
-  // 坎宫第三卦：水泽节（二世卦，外坎+内兑）
-  (
+  LiuShiSiGua(
     name: "水泽节",
     shortName: "节",
-    yaoList: [0, 1, 0, 1, 1, 0], // 外坎[0,1,0] + 内兑[1,1,0]
+    upper: kan,
+    lower: dui,
     guaCi: "亨。苦节不可贞。",
     yaoCi: [
       "初九：不出户庭，无咎。",
@@ -567,11 +624,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：苦节，贞凶，悔亡。",
     ],
   ),
-  // 坎宫第四卦：水雷屯（三世卦，外坎+内震）
-  (
+  LiuShiSiGua(
     name: "水雷屯",
     shortName: "屯",
-    yaoList: [0, 1, 0, 0, 0, 1], // 外坎[0,1,0] + 内震[0,0,1]
+    upper: kan,
+    lower: zhen,
     guaCi: "元亨，利贞。勿用有攸往，利建侯。",
     yaoCi: [
       "初九：磐桓，利居贞，利建侯。",
@@ -582,11 +639,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：乘马班如，泣血涟如。",
     ],
   ),
-  // 坎宫第五卦：水火既济（四世卦，外坎+内离）
-  (
+  LiuShiSiGua(
     name: "水火既济",
     shortName: "既济",
-    yaoList: [0, 1, 0, 1, 0, 1], // 外坎[0,1,0] + 内离[1,0,1]
+    upper: kan,
+    lower: li,
     guaCi: "亨，小利贞，初吉终乱。",
     yaoCi: [
       "初九：曳其轮，濡其尾，无咎。",
@@ -597,11 +654,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：濡其首，厉。",
     ],
   ),
-  // 坎宫第六卦：泽火革（五世卦，外兑+内离）
-  (
+  LiuShiSiGua(
     name: "泽火革",
     shortName: "革",
-    yaoList: [1, 1, 0, 1, 0, 1], // 外兑[1,1,0] + 内离[1,0,1]
+    upper: dui,
+    lower: li,
     guaCi: "己日乃孚，元亨，利贞，悔亡。",
     yaoCi: [
       "初九：巩用黄牛之革。",
@@ -612,11 +669,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：君子豹变，小人革面，征凶，居贞吉。",
     ],
   ),
-  // 坎宫第七卦：雷火丰（游魂卦，外震+内离）
-  (
+  LiuShiSiGua(
     name: "雷火丰",
     shortName: "丰",
-    yaoList: [0, 0, 1, 1, 0, 1], // 外震[0,0,1] + 内离[1,0,1]
+    upper: zhen,
+    lower: li,
     guaCi: "亨，王假之，勿忧，宜日中。",
     yaoCi: [
       "初九：遇其配主，虽旬无咎，往有尚。",
@@ -627,11 +684,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：丰其屋，蔀其家，窥其户，阒其无人，三岁不觌，凶。",
     ],
   ),
-  // 坎宫第八卦：火山旅（归魂卦，外离+内艮）
-  (
+  LiuShiSiGua(
     name: "火山旅",
     shortName: "旅",
-    yaoList: [1, 0, 1, 1, 0, 0], // 外离[1,0,1] + 内艮[1,0,0]
+    upper: li,
+    lower: gen,
     guaCi: "小亨，旅贞吉。",
     yaoCi: [
       "初六：旅琐琐，斯其所取灾。",
@@ -642,11 +699,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：鸟焚其巢，旅人先笑后号咷。丧牛于易，凶。",
     ],
   ),
-  // 离宫第一卦：离为火（本宫卦，外离+内离）
-  (
+
+  // 离宫八卦
+  LiuShiSiGua(
     name: "离为火",
     shortName: "离",
-    yaoList: [1, 0, 1, 1, 0, 1], // 外离[1,0,1] + 内离[1,0,1]
+    upper: li,
+    lower: li,
     guaCi: "利贞，亨。畜牝牛，吉。",
     yaoCi: [
       "初九：履错然，敬之，无咎。",
@@ -657,11 +716,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：王用出征，有嘉折首，获匪其丑，无咎。",
     ],
   ),
-  // 离宫第二卦：天火同人（一世卦，外乾+内离）
-  (
+  LiuShiSiGua(
     name: "天火同人",
     shortName: "同人",
-    yaoList: [1, 1, 1, 1, 0, 1], // 外乾[1,1,1] + 内离[1,0,1]
+    upper: qian,
+    lower: li,
     guaCi: "同人于野，亨。利涉大川，利君子贞。",
     yaoCi: [
       "初九：同人于门，无咎。",
@@ -672,11 +731,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：同人于郊，无悔。",
     ],
   ),
-  // 离宫第三卦：火风鼎（二世卦，外离+内巽）
-  (
+  LiuShiSiGua(
     name: "火风鼎",
     shortName: "鼎",
-    yaoList: [1, 0, 1, 0, 1, 1], // 外离[1,0,1] + 内巽[0,1,1]
+    upper: li,
+    lower: xun,
     guaCi: "元亨，利贞。无咎。",
     yaoCi: [
       "初六：鼎颠趾，利出否，得妾以其子，无咎。",
@@ -687,11 +746,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：鼎玉铉，大吉，无不利。",
     ],
   ),
-  // 离宫第四卦：地火明夷（三世卦，外坤+内离）
-  (
+  LiuShiSiGua(
     name: "地火明夷",
     shortName: "明夷",
-    yaoList: [0, 0, 0, 1, 0, 1], // 外坤[0,0,0] + 内离[1,0,1]
+    upper: kun,
+    lower: li,
     guaCi: "利艰贞。",
     yaoCi: [
       "初九：明夷于飞，垂其翼。君子于行，三日不食。有攸往，主人有言。",
@@ -702,11 +761,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：不明晦，初登于天，后入于地。",
     ],
   ),
-  // 离宫第五卦：山水蒙（四世卦，外艮+内坎）
-  (
+  LiuShiSiGua(
     name: "山水蒙",
     shortName: "蒙",
-    yaoList: [1, 0, 0, 0, 1, 0], // 外艮[1,0,0] + 内坎[0,1,0]
+    upper: gen,
+    lower: kan,
     guaCi: "亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。",
     yaoCi: [
       "初六：发蒙，利用刑人，用说桎梏，以往吝。",
@@ -717,11 +776,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：击蒙，不利为寇，利御寇。",
     ],
   ),
-  // 离宫第六卦：风水涣（五世卦，外巽+内坎）
-  (
+  LiuShiSiGua(
     name: "风水涣",
     shortName: "涣",
-    yaoList: [0, 1, 1, 0, 1, 0], // 外巽[0,1,1] + 内坎[0,1,0]
+    upper: xun,
+    lower: kan,
     guaCi: "亨，王假有庙，利涉大川，利贞。",
     yaoCi: [
       "初六：用拯马壮，吉。",
@@ -732,11 +791,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：涣其血去逖出，无咎。",
     ],
   ),
-  // 离宫第七卦：天水讼（游魂卦，外乾+内坎）
-  (
+  LiuShiSiGua(
     name: "天水讼",
     shortName: "讼",
-    yaoList: [1, 1, 1, 0, 1, 0], // 外乾[1,1,1] + 内坎[0,1,0]
+    upper: qian,
+    lower: kan,
     guaCi: "有孚，窒惕，中吉，终凶。利见大人，不利涉大川。",
     yaoCi: [
       "初六：不永所事，小有言，终吉。",
@@ -747,11 +806,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：或锡之鞶带，终朝三褫之。",
     ],
   ),
-  // 离宫第八卦：火水未济（归魂卦，外离+内坎）
-  (
+  LiuShiSiGua(
     name: "火水未济",
     shortName: "未济",
-    yaoList: [1, 0, 1, 0, 1, 0], // 外离[1,0,1] + 内坎[0,1,0]
+    upper: li,
+    lower: kan,
     guaCi: "亨，小狐汔济，濡其尾，无攸利。",
     yaoCi: [
       "初六：濡其尾，吝。",
@@ -762,11 +821,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：有孚于饮酒，无咎，濡其首，有孚失是。",
     ],
   ),
-  // 艮宫第一卦：艮为山（本宫卦，外艮+内艮）
-  (
+
+  // 艮宫八卦
+  LiuShiSiGua(
     name: "艮为山",
     shortName: "艮",
-    yaoList: [1, 0, 0, 1, 0, 0], // 外艮[1,0,0] + 内艮[1,0,0]
+    upper: gen,
+    lower: gen,
     guaCi: "艮其背，不获其身，行其庭，不见其人，无咎。",
     yaoCi: [
       "初六：艮其趾，无咎，利永贞。",
@@ -777,11 +838,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：敦艮，吉。",
     ],
   ),
-  // 艮宫第二卦：山火贲（一世卦，外艮+内离）
-  (
+  LiuShiSiGua(
     name: "山火贲",
     shortName: "贲",
-    yaoList: [1, 0, 0, 1, 0, 1], // 外艮[1,0,0] + 内离[1,0,1]
+    upper: gen,
+    lower: li,
     guaCi: "亨。小利有攸往。",
     yaoCi: [
       "初九：贲其趾，舍车而徒。",
@@ -792,11 +853,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：白贲，无咎。",
     ],
   ),
-  // 艮宫第三卦：山天大畜（二世卦，外艮+内乾）
-  (
+  LiuShiSiGua(
     name: "山天大畜",
     shortName: "大畜",
-    yaoList: [1, 0, 0, 1, 1, 1], // 外艮[1,0,0] + 内乾[1,1,1]
+    upper: gen,
+    lower: qian,
     guaCi: "利贞。不家食吉，利涉大川。",
     yaoCi: [
       "初九：有厉，利已。",
@@ -807,11 +868,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：何天之衢，亨。",
     ],
   ),
-  // 艮宫第四卦：山泽损（三世卦，外艮+内兑）
-  (
+  LiuShiSiGua(
     name: "山泽损",
     shortName: "损",
-    yaoList: [1, 0, 0, 1, 1, 0], // 外艮[1,0,0] + 内兑[1,1,0]
+    upper: gen,
+    lower: dui,
     guaCi: "有孚，元吉，无咎，可贞，利有攸往。曷之用？二簋可用享。",
     yaoCi: [
       "初九：已事遄往，无咎，酌损之。",
@@ -822,11 +883,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：弗损益之，无咎，贞吉，利有攸往，得臣无家。",
     ],
   ),
-  // 艮宫第五卦：火泽睽（四世卦，外离+内兑）
-  (
+  LiuShiSiGua(
     name: "火泽睽",
     shortName: "睽",
-    yaoList: [1, 0, 1, 1, 1, 0], // 外离[1,0,1] + 内兑[1,1,0]
+    upper: li,
+    lower: dui,
     guaCi: "小事吉。",
     yaoCi: [
       "初九：悔亡，丧马勿逐，自复。见恶人，无咎。",
@@ -837,11 +898,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：睽孤，见豕负涂，载鬼一车，先张之弧，后说之弧，匪寇婚媾，往遇雨则吉。",
     ],
   ),
-  // 艮宫第六卦：天泽履（五世卦，外乾+内兑）
-  (
+  LiuShiSiGua(
     name: "天泽履",
     shortName: "履",
-    yaoList: [1, 1, 1, 1, 1, 0], // 外乾[1,1,1] + 内兑[1,1,0]
+    upper: qian,
+    lower: dui,
     guaCi: "履虎尾，不咥人，亨。",
     yaoCi: [
       "初九：素履，往无咎。",
@@ -852,11 +913,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：视履考祥，其旋元吉。",
     ],
   ),
-  // 艮宫第七卦：风泽中孚（游魂卦，外巽+内兑）
-  (
+  LiuShiSiGua(
     name: "风泽中孚",
     shortName: "中孚",
-    yaoList: [0, 1, 1, 1, 1, 0], // 外巽[0,1,1] + 内兑[1,1,0]
+    upper: xun,
+    lower: dui,
     guaCi: "豚鱼吉，利涉大川，利贞。",
     yaoCi: [
       "初九：虞吉，有它不燕。",
@@ -867,11 +928,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：翰音登于天，贞凶。",
     ],
   ),
-  // 艮宫第八卦：风山渐（归魂卦，外巽+内艮）
-  (
+  LiuShiSiGua(
     name: "风山渐",
     shortName: "渐",
-    yaoList: [0, 1, 1, 1, 0, 0], // 外巽[0,1,1] + 内艮[1,0,0]
+    upper: xun,
+    lower: gen,
     guaCi: "女归吉，利贞。",
     yaoCi: [
       "初六：鸿渐于干，小子厉，有言，无咎。",
@@ -882,11 +943,13 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上九：鸿渐于逵，其羽可用为仪，吉。",
     ],
   ),
-  // 兑宫第一卦：兑为泽（本宫卦，外兑+内兑）
-  (
+
+  // 兑宫八卦
+  LiuShiSiGua(
     name: "兑为泽",
     shortName: "兑",
-    yaoList: [1, 1, 0, 1, 1, 0], // 外兑[1,1,0] + 内兑[1,1,0]
+    upper: dui,
+    lower: dui,
     guaCi: "亨，利贞。",
     yaoCi: [
       "初九：和兑，吉。",
@@ -897,11 +960,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：引兑。",
     ],
   ),
-  // 兑宫第二卦：泽水困（一世卦，外兑+内坎）
-  (
+  LiuShiSiGua(
     name: "泽水困",
     shortName: "困",
-    yaoList: [1, 1, 0, 0, 1, 0], // 外兑[1,1,0] + 内坎[0,1,0]
+    upper: dui,
+    lower: kan,
     guaCi: "亨，贞，大人吉，无咎，有言不信。",
     yaoCi: [
       "初六：臀困于株木，入于幽谷，三岁不觌。",
@@ -912,11 +975,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：困于葛藟，于臲卼，曰动悔有悔，征吉。",
     ],
   ),
-  // 兑宫第三卦：泽地萃（二世卦，外兑+内坤）
-  (
+  LiuShiSiGua(
     name: "泽地萃",
     shortName: "萃",
-    yaoList: [1, 1, 0, 0, 0, 0], // 外兑[1,1,0] + 内坤[0,0,0]
+    upper: dui,
+    lower: kun,
     guaCi: "亨。王假有庙，利见大人，亨，利贞。用大牲吉，利有攸往。",
     yaoCi: [
       "初六：有孚不终，乃乱乃萃，若号，一握为笑，勿恤，往无咎。",
@@ -927,11 +990,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：赍咨涕洟，无咎。",
     ],
   ),
-  // 兑宫第四卦：泽山咸（三世卦，外兑+内艮）
-  (
+  LiuShiSiGua(
     name: "泽山咸",
     shortName: "咸",
-    yaoList: [1, 1, 0, 1, 0, 0], // 外兑[1,1,0] + 内艮[1,0,0]
+    upper: dui,
+    lower: gen,
     guaCi: "亨，利贞，取女吉。",
     yaoCi: [
       "初六：咸其拇。",
@@ -942,11 +1005,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：咸其辅、颊、舌。",
     ],
   ),
-  // 兑宫第五卦：水山蹇（四世卦，外坎+内艮）
-  (
+  LiuShiSiGua(
     name: "水山蹇",
     shortName: "蹇",
-    yaoList: [0, 1, 0, 1, 0, 0], // 外坎[0,1,0] + 内艮[1,0,0]
+    upper: kan,
+    lower: gen,
     guaCi: "利西南，不利东北，利见大人，贞吉。",
     yaoCi: [
       "初六：往蹇，来誉。",
@@ -957,11 +1020,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：往蹇，来硕，吉，利见大人。",
     ],
   ),
-  // 兑宫第六卦：地山谦（五世卦，外坤+内艮）
-  (
+  LiuShiSiGua(
     name: "地山谦",
     shortName: "谦",
-    yaoList: [0, 0, 0, 1, 0, 0], // 外坤[0,0,0] + 内艮[1,0,0]
+    upper: kun,
+    lower: gen,
     guaCi: "亨，君子有终。",
     yaoCi: [
       "初六：谦谦君子，用涉大川，吉。",
@@ -972,11 +1035,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：鸣谦，利用行师，征邑国。",
     ],
   ),
-  // 兑宫第七卦：雷山小过（游魂卦，外震+内艮）
-  (
+  LiuShiSiGua(
     name: "雷山小过",
     shortName: "小过",
-    yaoList: [0, 0, 1, 1, 0, 0], // 外震[0,0,1] + 内艮[1,0,0]
+    upper: zhen,
+    lower: gen,
     guaCi: "亨，利贞，可小事，不可大事。飞鸟遗之音，不宜上，宜下，大吉。",
     yaoCi: [
       "初六：飞鸟以凶。",
@@ -987,11 +1050,11 @@ const List<LiuShiSiGua> liushisiGuaList = [
       "上六：弗遇过之，飞鸟离之，凶，是谓灾眚。",
     ],
   ),
-  // 兑宫第八卦：雷泽归妹（归魂卦，外震+内兑）
-  (
+  LiuShiSiGua(
     name: "雷泽归妹",
     shortName: "归妹",
-    yaoList: [0, 0, 1, 1, 1, 0], // 外震[0,0,1] + 内兑[1,1,0]
+    upper: zhen,
+    lower: dui,
     guaCi: "征凶，无攸利。",
     yaoCi: [
       "初九：归妹以娣，跛能履，征吉。",

@@ -1,10 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import '../models/gua_model.dart';
+import '../data/liushisi_gua.dart'; // 64卦数据
 import 'yao_item.dart';
+
+//分层灰色透明渐变：不同区间用不同灰度基础色，透明度同步提升
+const Map<int, Color> kDiffYaoColorConfig = {
+  0: Color.fromARGB(20, 245, 245, 245), // 0个差异：极浅灰底（#F5F5F5）+ 低透
+  1: Color.fromARGB(40, 224, 224, 224), // 1个差异：浅灰底（#E0E0E0）+ 低透
+  2: Color.fromARGB(70, 189, 189, 189), // 2个差异：淡灰底（#BDBDBD）+ 中透
+  3: Color.fromARGB(100, 158, 158, 158), // 3个差异：中灰底（#9E9E9E）+ 中透
+  4: Color.fromARGB(140, 128, 128, 128), // 4个差异：中深灰底（#808080）+ 高透
+  5: Color.fromARGB(170, 97, 97, 97), // 5个差异：深灰底（#616161）+ 高透
+  6: Color.fromARGB(200, 66, 66, 66), // 6个差异：暗灰底（#424242）+ 最高透
+};
+// const Map<int, Color> kDiffYaoColorConfig = {
+//   0: Color.fromARGB(30, 255, 255, 255), // 0个差异：彩虹白（极透白，打底）
+//   1: Color.fromARGB(220, 0, 168, 255), // 5个差异：电光蓝（高饱和）
+//   2: Color.fromARGB(220, 0, 217, 64), // 4个差异：荧光绿（高饱和）
+//   3: Color.fromARGB(220, 255, 214, 0), // 3个差异：柠檬黄（高饱和）
+//   4: Color.fromARGB(220, 255, 123, 0), // 2个差异：日落橙（高饱和）
+//   5: Color.fromARGB(255, 255, 0, 68), // 1个差异：霓虹红（高饱和）
+//   6: Color.fromARGB(220, 138, 0, 255), // 6个差异：魅惑紫（高饱和）
+// };
+
+// 基础状态颜色常量
+const Color kVariantHighlightColor = Color.fromARGB(181, 197, 236, 170); // 变卦高亮
+const Color kHoverColor = Color.fromARGB(77, 4, 186, 247); // 悬停高亮
+const Color kSelectedColor = Color.fromARGB(115, 4, 186, 247); // 选中状态
+const Color kCompareColor = Color(0x33008000); // 对比列表
+const Color kDefaultColor = Colors.white; // 默认背景色
 
 class GuaItem extends StatefulWidget {
   final LiuShiSiGua gua;
+  // final LiuShiSiGua? currentGua;
   final bool isSelected; // 是否为选中卦
   final bool isGuaGridHovered; // 矩阵中卦的悬停状态
   final bool isVariantHighlight; // 变卦高亮状态
@@ -20,6 +47,7 @@ class GuaItem extends StatefulWidget {
   const GuaItem({
     super.key,
     required this.gua,
+    // this.currentGua,
     required this.isSelected,
     required this.isGuaGridHovered,
     required this.isVariantHighlight,
@@ -42,23 +70,31 @@ class _GuaItemState extends State<GuaItem> {
 
   @override
   Widget build(BuildContext context) {
-    //     final maxWidth = widget.;
-
-    // // 动态计算尺寸（基于宽度的比例）
-    // final itemHeight = maxWidth * 1.5; // 高度为宽度的1.5倍
-    // final guaNameFontSize = maxWidth * 0.15; // 卦名字体为宽度的15%
-    // final yaoFontSize = maxWidth * 0.2; // 爻字体为宽度的20%
-
     Color bgColor = Colors.white;
+
     if (widget.isVariantHighlight) {
-      bgColor = Colors.red.withOpacity(0.2); // 变卦高亮（纯红浅背景）
-    } else if (widget.isGuaGridHovered || _isLocalHover) {
-      bgColor = Colors.lightBlue.withOpacity(0.3); // 悬停高亮
+      bgColor =kVariantHighlightColor;
     } else if (widget.isSelected) {
-      bgColor = Colors.blue.withOpacity(0.2); // 选中状态
+      bgColor = kSelectedColor;
+    } else if (widget.isGuaGridHovered || _isLocalHover) {
+      bgColor = kHoverColor;
     } else if (widget.isInCompare) {
-      bgColor = Colors.green.withOpacity(0.2); // 对比列表
+      bgColor = const Color.fromARGB(51, 15, 128, 0);
     }
+    // 处理差异爻位的颜色
+    // else {
+    //   if (widget.currentGua != null) {
+    //     final diffYaoIndexes = calculateBianYaoIndexes(
+    //       widget.gua,
+    //       widget.currentGua!,
+    //     );
+    //     if (diffYaoIndexes != null && diffYaoIndexes!.isNotEmpty) {
+    //       final int diffCount = diffYaoIndexes!.length;
+    //       // 从配置中取对应颜色，若超出配置范围则用默认差异色（此处取6个差异的颜色）
+    //       bgColor = kDiffYaoColorConfig[diffCount] ?? kDiffYaoColorConfig[6]!;
+    //     }
+    //   }
+    // }
 
     return MouseRegion(
       onEnter: (_) {
@@ -73,19 +109,17 @@ class _GuaItemState extends State<GuaItem> {
         onTap: widget.onGuaTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          // height: itemHeight,
           decoration: BoxDecoration(
             color: bgColor,
             border: Border.all(
               color: widget.isSelected ? Colors.blue : Colors.grey,
-              width: widget.isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
-              // 新增阴影，让卦框更立体
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withOpacity(0.6),
                 blurRadius: 2,
+                spreadRadius: 2,
                 offset: const Offset(1, 1),
               ),
             ],
